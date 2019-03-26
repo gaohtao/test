@@ -1,0 +1,78 @@
+1 系统结构， 一个服务端，多个客户端
+  C1        
+  C2       Server1       ManagerClient
+           Server2
+  C3 
+  
+两个服务器   OK
+
+// ----------命令协议--------------
+1 登录 
+请求：  %LOGIN%:用户名:密码:随机码
+应答： 登录成功  %LOGIN%:SUCCESSFULLY:JSon表示的User对象											
+       登录失败   %LOGIN%:FAILED:用户名不存
+                 %LOGIN%:FAILED:密码错误
+       重复登录   %LOGIN%:FAILED:重复登录  
+
+2 退出 
+请求   %EXIT%:用户名
+应答： 无
+
+3 心跳
+请求    %HEART%:用户名
+应答：  %HEART%:OK       
+
+4 请求文件列表，   没有用户名的原因是无需登录就可以获取列表。
+请求   %GETFILELIST%
+应答： 服务器发来用户的所有文件列表。
+			 %FILELIST%+JSON对象     
+			 
+4。1 请求搜藏列表
+请求   %GETCOLLECTLIST%:用户名
+应答： 服务器发来用户的所有文件列表。
+			 %GETCOLLECTLIST%+JSON对象     
+				 
+
+5 注册新用户
+请求： %REGISTER%:新用户名:密码:随机码
+应答： %REGISTER%:OK   注册成功
+       %REGISTER%:FAILED:原因  注册失败，原因示例（用户名已经存在，）
+       
+6 修改密码
+请求： %OPERATION%:MODIFYPSW:用户名:旧密码:新密码:随机码
+应答： %OPERATION%:MODIFYPSW:OK            修改成功
+       %OPERATION%:MODIFYPSW:FAILED:原因   修改失败+原因
+
+/*
+6.1 修改个人信息（头像、保存路径）
+请求： %OPERATION%:MODIFYINFO:用户名:保存路径:头像文件
+应答： %OPERATION%:MODIFYINFO:OK            修改成功
+       %OPERATION%:MODIFYINFO:FAILED:原因   修改失败+原因
+*/
+
+7 删除收藏文件
+请求： %OPERATION%:DELETE:用户名:文件ID    
+应答： %OPERATION%:DELETE:OK            删除成功
+       %OPERATION%:DELETE:FAILED:原因   删除失败+原因 
+
+8 收藏文件
+请求： %OPERATION%:COLLECT:用户名:文件ID    
+应答： %OPERATION%:COLLECT:OK            删除成功
+       %OPERATION%:COLLECT:FAILED:原因   删除失败+原因 
+
+
+
+10 下载文件
+命令： %DOWNLOAD%:用户名:文件ID			
+应答： 通过文件发送线程发送以下命令：先发一个文件长度数据，后面连续发送内容数据
+       %DOWNLOAD%:ACK:文件名:12288
+       %DOWNLOAD%:INDEX:00001:datalen:1024
+       010101010100  。。。  这是1024字节二进制数据
+       %DOWNLOAD%:INDEX:00002:datalen:1024
+       010101010100  。。。  这是1024字节二进制数据
+       ...
+       %DOWNLOAD%:END:    文件发送完毕
+
+11 查询
+命令：%QUERY%:用户名:查询内容
+应答：暂未定义

@@ -1,0 +1,584 @@
+项目简介：
+坦克大战项目开发是采用Java语言，eclipse开发工具；基于MVC设计模式为框架，运用面向对象的思想构造模型，采用swing框架来构建UI视图，通过监听器和定时器调用数据模型并在UI界面刷新图像来完成坦克大战项目。
+
+面向对象程序设计（英语：Object-oriented programming，缩写：OOP）是一种程序设计范型，同时也是一种程序开发的方法。对象指的是类的实例。它将对象作为程序的基本单元，将程序和数据封装其中，以提高软件的重用性、灵活性和扩展性。面向对象程序设计可以看作一种在程序中包含各种独立而又互相调用的对象的思想。对象一般包含3大特征封装、继承、多态。
+
+=========================================  
+坦克大战游戏设计思路
+作者：高洪涛 2017-09-15
+
+文档说明：
+    一直以来，许多学员对于项目感到很恐惧，不是害怕做项目的辛苦付出，担忧的主要是这两点：
+1 对项目需求中提出的众多功能没有想法，根本摸不着头脑，不懂得如何分析、分解、规划实现步骤。概括起来就是没有设计思路。
+2 有了一些想法，懵懵懂懂的知道要使用上课中讲过的某个知识点，就是不懂得如何应用到本项目中。概括起来就是不会应用。
+    上述情况在第一阶段比较普遍，尤其是学习程度落后的学生身上表现更明显。老师常常要手把手讲解功能点是怎么分析分解实现，甚至要动手编写出示范代码才能让学生理解明白。如何让落后的学生快速掌握功能设计过程，用简明方法实现出基本功能，一直是我思考的问题。我认为不同的学生会碰到不同的困难，有的是想不出思路，有的是具体实现上不知道该如何编码，有的是逻辑流程混乱，每个人都迫切需要一个万能的百科全书，有什么疑难直接能在书中找到解决方法。之前充当这本百科全书的是老师、同学、百度，有时信息来源不同，获得的答案也多且混乱，不知道哪一种才是正确的，需要老师来拨乱反正，给出清晰明了的设计方法。
+    我汇总了我做该项目的经验，从设计思路和具体应用两种角度全面分析了项目功能，针对学生感觉困难的技术点一一分析讲解，正确让学生阅读后能清楚的知道这个问题该如何设计和编码。下面内容包括了分析问题、设计流程、实现步骤、关键的示范代码，供大家参考。
+    
+文档阅读人员：
+    本文主要是给落后人员答疑解惑，获得设计思路的，因此最适合这些想不出解决方法、无从下手的学生。
+    对于技术程度比较好的学生不要在项目初期阅读本文，否则你思考问题时会不由自主的被本文影响，无法想出自己的实现方法，简单说来就是你的脑子被废了。应该是自己的项目中期时会遇到各种问题，一般是整体设计考虑不周，添加功能引起的问题很多，越做越烦，这时再来阅读本文，会给你带来清晰明确的思路，宛如一阵清流淌过心田，让人恍然大悟。
+ 
+=========================================   
+
+
+
+--------------- 技术点讲解1  关于地图 ---------------------
+
+1.1如何把实际地图抽象化成数据？
+  采用二维数组表示地图。地图大小20x20格，每个元素占用一格，每格大小30x30像素点，总共地图大小600x600像素点。
+ int map[20][20];
+ 数组元素定义：0（空白）、1（水）、2（树林）、3（砖块）、4（铁块）、5（家）
+可以参考一幅坦克大战地图进行填充数组。
+这样一个数组就表示一关地图。
+
+1.2 如何表示多关卡的地图？
+  一个二维数组表示一关地图，那么多个二维数组就表示多关地图，因此定义成3维数组就行了。
+  // 定义3关地图
+  public int[][][] map = new int[LEVEL][ROW][COL];
+
+1.3 如何显示地图？
+  采用二重循环，依次读取map数组，分别绘制每一个元素。
+  在游戏面板的paintComponent中，应该先绘制绘制地图，然后依次绘制坦克、子弹、道具等对象。
+
+1.4 如何实现地图中的元素可被摧毁？当重玩这关时地图又会恢复？
+  设计成2部分地图数据： 
+（1）不可变的地图数据，就是每关地图数据。这部分数据是永不会改变的，只能读取。
+int[][] map1 = { 
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+	{ 3, 3, 3, 3, 3, 3, 0, 0, 0, 4, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 2, 2, 2, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 2, 2, 2 },
+	{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+	{ 3, 3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 5, 3, 0, 0, 0, 0, 0, 0, 0, 0 }, };
+int[][] map2 = { 
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+	{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 },
+	{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 5, 3, 0, 0, 0, 0, 0, 0, 0, 0 }, };
+
+  public int[][][] map = {map1,map2,map3};  //定义三关数据。
+
+（2）可变的地图数据，定义游戏运行地图
+  public int[][] gamemap = new int[ROW][COL];
+  然后把当前关卡数据拷贝到gamemap中。
+  for (int i = 0; i < ROW; i++) {
+	for (int j = 0; j < COL; j++) {
+		gamemap[i][j] = map[newLevel][i][j];
+	}
+  }
+（3）当子弹摧毁地图元素时，改变游戏运行地图gamemap中元素。
+（4）当重新开始时，只要重新把当前关卡数据拷贝到gamemap中，这样游戏界面就恢复过来了。
+（5）下一关时，重新设定gamemap数据即可。
+
+--------------- 技术点讲解2  关于窗口 -----------------------
+
+2.1 窗口间切换方法
+  例如创建了启动窗口A和游戏窗口B，从A-》B切换原理是隐藏A窗口，显示B窗口
+  A.setVisible(false);
+  B.setVisible(true);  
+
+2.2 游戏中有多个窗口，该如何管理？
+  创建一个窗口类View，专门存放静态窗口对象（启动窗口、游戏窗口、帮助窗口、自定义设置窗口、过关窗口、游戏结束窗口），可以用于全局调用。
+public class View {    
+	//主程序窗口
+	
+	//菜单窗口
+	//public static  CustomFrame customFrame;    
+	public static  HelpDialog helpDialog;
+	public static  AboutDialog aboutDialog;
+	public static  GameOverDialog gameOverDialog;
+	public static  PassDialog            passDialog;
+}
+
+2.3 菜单中如何实现点击菜单项弹出窗口？
+  一般有两种方法，第一种思想是对每一个菜单条目、按钮设置独立的动作监听器，这样要创建许多监听器出来，代码上比较繁琐。
+  第二种思想是对所有的菜单条目、按钮设置统一的动作监听器，这样就可以集中处理。
+2.3.1 独立的动作监听器
+以菜单中的about条目为例说明：
+	public JMenuItem about = new JMenuItem("[关于]");
+	about.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			View.aboutDialog.setVisible(true);			
+		}
+	});
+2.3.2 统一的动作监听器
+	private ActionCtrl actionCtrl;    //公共的动作监听器 
+        start.addActionListener(actionCtrl);  // 设置开始游戏、暂停、继续、重新开始条目的动作监听器
+	pause.addActionListener(actionCtrl);
+	resume.addActionListener(actionCtrl);
+	restart.addActionListener(actionCtrl);
+	// 添加按键命令
+	start.setActionCommand("D");	//这是设置每个命令字符串，为了简单起见只有一个字母。	
+	pause.setActionCommand("P");   // 暂停
+	resume.setActionCommand("G"); // 继续
+	restart.setActionCommand("R");  // 重新开始
+		
+最关键的ActionCtrl 类实现方法如下：
+	public void actionPerformed(ActionEvent e) {
+		char key = e.getActionCommand().charAt(0); //这是取出命令字符串的首字母，方便比较判断。	
+		switch (key) {
+		
+		case 'D':    //开始游戏			
+			gc.gameStart();
+			
+			break;
+			
+		case 'P':    //暂停
+			gc.pause();
+			
+			break;						
+		
+		case 'G':    //继续
+			gc.resume();
+			
+			break;
+			
+		case 'R':   //重新开始  				
+			int str = JOptionPane.showConfirmDialog(null, "重新开始", "请选择", JOptionPane.YES_NO_OPTION);
+			if(str==JOptionPane.YES_OPTION)	{ 
+				//重新开始游戏
+				gc.restart();
+			}		
+			break;
+		}
+	}
+
+--------------- 技术点讲解3  关于运动对象 -----------------------
+
+3.1 坦克类如何设计？
+  有本方坦克和敌方坦克，因此可以设计一个通用的坦克类CTank，使用类型变量区分各种坦克，
+  坦克属性包括：外观图片、大小、运动速度、生命值、地图中的坐标。
+  
+  本方坦克运动:
+      本方坦克受键盘wasd控制，因此使用下面的方式检测按键。
+      public class KeyCtrl extends KeyAdapter {
+          public void keyPressed(KeyEvent e) {
+              // 得到按键的int值
+		int key = e.getKeyCode();
+		switch (key) {
+		case KeyEvent.VK_W: // 向上
+		moveUp();
+		}
+          }
+      moveUp()是坦克上移的方法，按照步进值递增改变坦克的坐标。
+
+3.2 游戏中的坦克、子弹、道具数量众多，该如何保存？
+    在游戏面板类中定义一些链表，分别存放坦克、子弹、道具对象。当这些对象诞生时添加到链表中，当这些对象被摧毁、吃掉时从链表中删除之。
+        // 创建坦克集合
+	public ArrayList<Tank> tankList = new ArrayList<Tank>();
+	// 创建子弹集合
+	public ArrayList<Bullet> bulletList = new ArrayList<Bullet>();
+	// 创建宝物集合
+	public ArrayList<Property> propertyList = new ArrayList<Property>();
+
+        // 添加所有坦克到坦克集合
+	game.gamePanel.tankList.add(game.gamePanel.heroTank);        
+ 	Tank EnemyTank = new Tank(this, x, y, 'D', type, 1, 1, 5);
+	game.gamePanel.tankList.add(EnemyTank);
+	Bullet b = fire();
+	game.gamePanel.bulletList.add(b); 
+
+  	// 坦克死亡，从坦克列表中销毁
+	game.gamePanel.tankList.remove(this);					 
+
+3.3 如何驱动坦克、子弹运动？
+  使用2个定时器分别驱动坦克和子弹。在定时器的处理函数中改变对象的坐标，然后刷新游戏面板，就显示出新位置了。
+  public Timer tankTimer;   // 定时器， 驱动坦克运动
+  public Timer bulletTimer; // 定时器， 驱动子弹运动
+
+3.4 如何生成道具？
+  使用定时器，过一段时间就创建一个新道具，种类位置随机。添加到道具链表中。  
+  public Timer creatorTimer; //造物主定时器，负责生成敌坦克、宝物
+
+3.5 坦克运动的步进值该如何选取？
+  坦克运动步幅决定了速度，因为地图上最小一格是30x30，坦克的步进值必须能被30整除，这样才能使得运动坐标刚好是30的整数倍。如果不能整除，就会导致坦克坐标不是30的整数倍，坦克无法穿过一些小格子缺口，界面上表现是本方坦克总也对不准缺口。
+  30x30格子可选取的步进值是 1/2/3/5/6/10/15。
+
+3.6 坦克运动到地图边界如何判断越界？
+  越界很好判断，关键是检查出越界后该如何处理。越界检测流程如下：
+（1）生成下一步坐标newX、newY；
+（2）检查下一步坐标是否越界，上下左右四个边界。
+（3）如果越界，下一步坐标运动无效，恢复成边界坐标值。同时把x也设置成边界值。
+	newX=0；newX=570；newY=0；newY=570;
+	x=newX； y=newY
+（4）如果是敌方坦克，本次运动事件坐标不变，但是方向要随机改变。不然就会导致敌坦克撞到边界就停止不动了。
+  
+--------------- 技术点讲解4  关于坦克碰撞检测 -----------------------
+
+  碰撞检测是本项目最复杂的技术点，在此先讲碰撞检测原理，再讲坦克运动、子弹运动过程中的碰撞检测具体流程。
+  碰撞检测分成3种，第一是检测是否与地图碰撞，第二是检测是否与坦克碰撞，第三是检测是否与敌方子弹碰撞。
+
+4.1 检测与地图碰撞
+   地图中树林元素是可穿过的，因此不会碰撞。其它元素都不能穿越，必须进行识别检测。
+   一般方法:  
+   （1）把当前坐标+前进方向的步进值得到下一步的新坐标值。
+   （2）把新坐标值转换成在地图数组上的行列数，
+   （3）判断这个行列数对应的地图元素是否是可穿越的的类型。
+        如果可穿越，就修改坦克坐标为新坐标值。
+        如果不可穿越，就随机生成新的运动方向，但是坦克坐标值保持不变。
+    上述方法中会出现各种异常情况，原因是坦克在地图上运动是按照像素点前进的，会出现跨越2个格子的现象，这样单纯靠一个坐标点检查就不行了，必须检查运动方向上的两个顶点。具体做法如下：
+以坦克向上运动为例:
+坦克有个外包矩形，左上角和右下角顶点坐标分别定义为
+	int LT_x = x + 1; // 左上角坐标要缩进1像素
+	int LT_y = y + 1;
+	int RD_x = x + Data.TANK_SIZE - 1; // 右下角坐标，减1是为了避免整数点落入下一格中，导致误判成碰撞
+	int RD_y = y + Data.TANK_SIZE - 1;
+然后向上运动一步，新的坐标更新为：
+	LT_y -= step;
+	RD_y -= step;
+接着计算出新坐标在地图中的行列号：
+	int LT_row = LT_y / Data.gridSize; // 左上角的行列序号
+	int LT_col = LT_x / Data.gridSize;
+	int RD_row = RD_y / Data.gridSize; // 右下角的行列序号
+	int RD_col = RD_x / Data.gridSize;
+向上运动，要判断左上顶点（LT_row ，LT_col ）、右上顶点（LT_row ，RD_col ）这两点所在元素是否可穿越。
+如果都可穿越才判断为可向上运动。
+其他方向的运动判断同理。
+
+        
+4.2 检测与坦克碰撞
+   不管是己方坦克还是敌方坦克，一旦相遇就无法通行，因此要检测每一个坦克。
+   坦克在地图上运动是按照像素点前进的，会出现跨越2个格子的现象，因此不能用简单的判断每个格子上是有坦克的方法确定碰撞。采用坦克的矩形区域是否相交来计算。
+   	// 获得坦克对象自己的矩形
+	Rectangle thisRec= new Rectangle(newX, newY, Data.TANK_SIZE, Data.TANK_SIZE);
+   	// 从链表中取出其他坦克的矩形
+	Rectangle tankRec = new Rectangle(tank.x, tank.y, Data.TANK_SIZE, Data.TANK_SIZE);
+	// 比较两个矩形是否有交集
+   	if (thisRec.intersects(tankRec)) { // 如果有交集为真
+		flag = true;// 不可穿越
+		return flag;
+   	}
+
+4.3 检测坦克与子弹碰撞
+  	 
+  坦克与子弹碰撞不影响运动，因此在坦克前进中不检测子弹碰撞。
+  在子弹的运动过程中会被坦克阻挡，因此应该在子弹的检测过程中进行判断。
+  原理方法和坦克碰撞检测相同，只需要循环判断敌方坦克的外包矩形区域是否包含子弹的中心点坐标(centerx, centery)。  
+	for (int i = 0; i < gc.game.gamePanel.tankList.size(); i++) {
+		Tank tank = gc.game.gamePanel.tankList.get(i);
+		if (tank != null && tank.type != 0) {
+			Rectangle tankRec = new Rectangle(tank.x, tank.y, Data.TANK_SIZE, Data.TANK_SIZE);
+			if (tankRec.contains(centerx, centery)) { // 如果包含为真
+				flag = true;// 碰到坦克
+				this.state = 1; // 爆炸标记，
+				this.explodeTime = 10; // 爆炸状态显示100ms.
+
+				// 播放子弹爆炸音效
+				gc.musicBulletExplode.play(1);
+
+				// 敌人受伤害
+				tank.hurt(this.hurt);
+				return flag;
+			}
+		}
+	}
+
+4.4 检测与道具的碰撞
+    原理：从道具链表中依次读取道具，检测本坦克的矩形区域是否和道具的矩形区域相交，如果相交就表示碰撞，返回该道具对象。
+          本方坦克碰到道具可以吃掉，敌坦克没有实现吃道具功能。
+
+
+
+4.5 坦克运动碰撞检测流程
+   本方坦克运动过程中必须依次检测这些碰撞事件：
+	intersectionMap()   //检测与地图的碰撞，如果有阻碍就返回true
+	intersectionTank()  //检测与坦克的碰撞，如果有阻碍就返回true
+	intersectionProperty()  //检测与道具的碰撞，如果有阻碍就返回道具对象
+	如果有碰撞地图或坦克就不更新当前坐标。
+        如果碰到道具就吃掉道具eatProperty(p)，然后更改坐标。
+	如果没有碰撞就更改当前坐标。
+
+   敌方坦克的碰撞检测流程
+        intersectionMap()   //检测与地图的碰撞，如果有阻碍就返回true
+	intersectionTank()  //检测与坦克的碰撞，如果有阻碍就返回true
+	如果有碰撞就随机改变方向changeDirection(1);
+	如果没碰撞就更新坐标。
+
+4.6 子弹运动碰撞检测流程
+  子弹运动中必须检测这些碰撞事件：
+	intersectionMap()   //检查子弹是否碰到地图上的障碍物
+	intersectionTank(); //检查子弹是否碰到地图上的坦克
+  注意上的函数intersectionMap是定义在子弹类中，坦克类中的也有同名方法intersectionMap，作用是不同的。
+		
+
+--------------- 技术点讲解5  子弹爆炸 -----------------------
+
+5.1 子弹遇到障碍物是会爆炸的，如何实现这种爆炸效果呢？
+  我认为，子弹具备两种状态，第一种是正常的子弹状态，第二种是爆炸状态。
+    第一种正常状态：子弹会直线前进，显示正常子弹图标。
+    第二种爆炸状态：子弹停止不动，显示爆炸图标。
+  爆炸状态显示一段时间（200ms~500ms）后子弹对象生命周期结束，应该被销毁。
+  从上考虑，子弹应该具备状态切换机制。
+
+	子弹类Bullet中设计状态属性：
+	private int state; // 0=正常子弹，1=遇到障碍物爆炸
+	private int explodeTime = 10; // 子弹定时器10ms间隔，因此爆炸态显示100ms。
+
+  在检测地图碰撞函数intersectionMap()中，	设计思路：
+ 		如果子弹中心点坐标对应的地图元素是不可穿越的，就表示发生碰撞，立即改变子弹状态：
+		this.state = 1; // 爆炸标记，
+		this.explodeTime = 10; // 爆炸状态显示100ms.
+  以后再刷新游戏面板，绘制子弹时按照状态绘制爆炸图标即可。
+
+5.2 子弹是会炸毁地图元素的，如何实现？
+  在基本功能需求中，子弹碰到砖墙会同归于尽。扩展功能需求中子弹威力提升，可以打掉树林、铁砖。
+  子弹爆炸时就立即判定碰到的元素是（砖墙、树林、铁砖），如果是可摧毁的元素就设置游戏地图数组对应位置为null元素。
+  gc.game.gamePanel.map.setElement(row, col, Map.E_NULL);
+
+5.3 打到敌对坦克怎么处理？
+  在intersectionTank()函数中，如果碰到敌对坦克，就对坦克造成伤害：
+  	tank.hurt(this.hurt); // 敌人受伤害
+
+--------------- 技术点讲解6   升级系统 -----------------------
+
+我设计的坦克可以升级：
+本方坦克吃到子弹道具后会升一级，最高达到3级。不同级别的大小相同，发射的子弹类型不同。
+当然因为缺乏图标资源，我们考虑简单起见，坦克升级后大小形状颜色不变，只有子弹威力加强了。
+1级坦克： 原始坦克类型，血量20， 子弹1级
+2级坦克： 坦克颜色改变，血量40， 子弹2级
+3级坦克： 坦克颜色改变，血量80， 子弹3级
+
+
+发射的子弹类型：1、2、3种；
+第1类子弹： 大小12x9
+            伤害力： 5点
+
+第2类子弹： 大小 15x12
+            伤害力   10点
+            可打掉树林
+            
+第3类子弹： 大小 18x15
+            伤害力   15点
+            可打掉铁砖。
+
+为了加强游戏竞赛性，允许敌方坦克吃道具，具备相同的升级能力。
+
+--------------- 技术点讲解7   道具系统设计 -----------------------
+
+设计道具种类：
+	public static final int PROPERTY_BLOOD=0;    //0：血量+满
+	public static final int PROPERTY_LIFE=1;     //1：+生命
+	public static final int PROPERTY_BULLET=2;   //2：子弹升级
+	public static final int PROPERTY_BOMB=3;     //3: 炸弹，清空敌方坦克
+
+
+--------------- 技术点讲解8   游戏控制设计  -----------------------
+游戏控制分为：
+开始游戏、结束游戏、重新开始、暂停、继续。
+（1）开始游戏流程：
+    这时游戏界面中已经正确加载了游戏地图，可以立即开始游戏。
+    设置菜单栏，一些设置为禁用，一些设置为使能。目的是避免游戏中再次点击“开始游戏”。
+    启动倒计时定时器，显示321。倒计时结束时启动3个游戏定时器（坦克运动、子弹运动、造物主定时器（负责生成坦克和道具））。
+    播放游戏开始声音。
+
+（2）结束游戏流程：
+    停止所有定时器
+    退出程序System.exit(0)
+
+（3）重新开始流程：
+    恢复菜单栏状态
+    恢复游戏地图数据
+    本方坦克重新初始化（等级、血量、位置）
+    游戏数据初始化（剩余敌坦克数量、已消灭数量，得分）
+    坦克链表、子弹链表、道具链表清空。
+    倒计时恢复。
+  
+（4）暂停、继续 
+    游戏状态分3种：停止、运行、暂停。
+    点击菜单“暂停”改变状态为暂停。界面显示大大的“PAUSE”。停止3个游戏定时器。
+    点击菜单“继续”改为运行态，界面的“PAUSE”消失，启动3个游戏定时器。
+
+
+--------------- 技术点讲解9   声音系统设计  -----------------------
+
+  声音分为背景音乐和音效两种，都是通过播放wav文件。必须支持同时播放背景音乐和音效。
+
+ （1）设计声音播放类MusicPlay，专门用来播放声音文件，支持0=循环播放，1=单次播放, n=播放n次。
+  public class MusicPlay {	
+	
+	String file;  //wav音乐文件
+	int  loop;   // n循环标记，0=循环播放，1=单次播放, n=播放n次
+	
+	Clip clip;
+	File wavFile;
+	AudioInputStream ais;
+	
+	
+	public MusicPlay(String filepath){
+		file = filepath;
+		
+		try {
+			clip = AudioSystem.getClip();
+			wavFile = new File(file);
+			ais = AudioSystem.getAudioInputStream(wavFile);
+			clip.open(ais);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	//n循环标记，0=循环播放，1=单次播放, n=播放n次
+	public MusicPlay play( int n) {
+		loop = n;
+		if(n==0)
+		    clip.loop(Clip.LOOP_CONTINUOUSLY);  //永远循环播放
+		else if(n>=1)
+		{
+			clip.setMicrosecondPosition(0);  //每次重复播放前设置剪辑播放位置为0.
+			clip.loop(n-1);   //播放n次 
+		}
+		/* 说明：loop函数很特别，参数0表示播放一次，参数1表示播放完毕后再重复播放1次
+		 * */
+		
+		return this;
+	}
+	
+	//这个stop具备暂停效果，再次调用play方法会继续播放下去
+	public void stop(){
+		clip.stop();
+	}
+	
+	public boolean playingStatus(){
+		return clip.isRunning();
+	}
+	
+  }
+
+ （2）然后在游戏控制器中创建不同的声音对象，目的是只建立一次，避免游戏中反复创建浪费时间。
+        // 定义全局的音乐对象
+	public MusicPlay musicFire = new MusicPlay("music/开始攻击.wav");
+	public MusicPlay musicStart = new MusicPlay("music/开始.wav");
+	public MusicPlay musicIron = new MusicPlay("music/打铁.wav");
+	public MusicPlay musicBulletExplode = new MusicPlay("music/爆炸.wav");
+	public MusicPlay musicHomeExplode = new MusicPlay("music/爆炸1.wav");
+	public MusicPlay musicBomb = new MusicPlay("music/炸弹.wav");
+	public MusicPlay musicEat = new MusicPlay("music/吃东西.wav");// 吃东西
+	public MusicPlay musicGameOver = new MusicPlay("music/输.wav");// 游戏结束
+	public MusicPlay musicGamePass = new MusicPlay("music/奖命.wav"); // 游戏过关
+	public MusicPlay musicMove = new MusicPlay("music/自己移动.wav");
+
+	public MusicPlay musicBK = new MusicPlay("music/画.wav"); // 背景音乐对象
+
+（3）播放时调用方法：
+	gc.musicBK.play(0); //循环播放
+	musicStart.play(1); //单次播放 游戏开始声音
+
+--------------- 技术点讲解10   按键控制设计  -----------------------
+
+  一般控制坦克运动是靠键盘监听器，最普通的方法是在KeyListener监听器中接收按键事件：
+
+public void keyTyped(KeyEvent e) {
+	// TODO Auto-generated method stub
+	char ch = e.getKeyChar();
+	System.out.println("ch=" + ch);
+	switch (ch) {
+	case 'a':
+		player1.x -= 5;
+		if (player1.x < 0)
+			player1.x = 0;
+			break;
+这种方法的原理是按一下走一下，持续按下按键后利用操作系统自动触发多次按键事件进行移动。
+弊端是自动重复触发需要一段时间延时。这个延时时间可以在操作系统中设定，但是对我们操作有影响。
+另一个弊端是按下方向键a时又按下开火键k，这时检测到的按键是k，造成一发射子弹坦克就停止运动了。
+
+解决方法是采用keyPressed、keyReleased检测多个按键被按下弹起事件。具体做法如下：
+（1）本方坦克增加属性运动状态runState：
+	public char direction; // 上 -U 下 -D 左-L 右-R
+	public int runState; // 运动状态，1：运动，0：停止
+	public static final int STATE_MOVING = 1; // 运动中的坦克
+	public static final int STATE_STOP = 0;   // 停止不动的坦克
+
+（2）当按下方向键asdw时设置为运动态，弹起时设置为停止态：
+	int key = e.getKeyCode();		
+		switch (key) {
+		case KeyEvent.VK_W: // 向上	
+			// System.out.println(" press up");
+			game.gamePanel.heroTank.setDirection('U');
+			game.gamePanel.heroTank.runState = Tank.STATE_MOVING;
+			break;
+（3）方向键按下就循环播放运动音效，按键弹起就停止运动音效。
+	if (game.gamePanel.heroTank.runState == Tank.STATE_MOVING) {
+		if (false == game.gc.musicMove.playingStatus()) {
+			game.gc.musicMove.play(0);
+		}
+	}
+
+（4）keyReleased(), 弹起K键时发射子弹。
+  搞了半天本方坦克还是不能运动，到底怎么才能动起来呢？就要使用到驱动坦克运动的定时器帮忙了。
+
+	public ActionListener taskTankMove = new ActionListener() {
+		public void actionPerformed(ActionEvent evt) {
+			for (int i = 0; i < game.gamePanel.tankList.size(); i++) {
+				Tank t = game.gamePanel.tankList.get(i);
+				if ( t.type != 0) {  //敌方坦克运动
+					t.move();
+					t.randomFire();					
+				}	
+				else{		//本方坦克运动
+					t.move();
+				}				
+			}
+			game.gamePanel.repaint();	
+		}
+	};
+
+ （5）这里move函数就是坦克运动处理函数。实现过程如下：
+    calculateNewPos();  //根据方向计算下一步坐标newX、newY。
+    检测地图碰撞、坦克碰撞。
+    更改坐标位置。
+    这样下次刷新出来的坦克就移动了位置。移动的快慢受2个因素控制：坦克移动步进值、定时器间隔。示例代码：
+
+    if (intersectionMap() || intersectionTank()) {
+	// 有碰撞不可穿越，就随机生成新的运动方向
+	changeDirection(1);
+    } else if (p != null) { // 碰撞宝物, 本方坦克吃掉宝物
+	eatProperty(p);
+	// 吃掉后更新坐标位置
+	x = newX;
+	y = newY;
+    }else {
+	// 没有碰撞，更新坐标位置
+	x = newX;
+	y = newY;
+	changeDirection(0);
+    }
+    
+
+
+
+--------------------- END --------------------------------------
+
+
+
+
+
